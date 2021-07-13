@@ -110,7 +110,7 @@ function renderProduct(product: {
   addBtn.addEventListener("click", function (event) {
     event.preventDefault();
 
-    let itemIndex = checkExistCart(product);
+    let itemIndex = checkExistCart(product.id);
 
     if (itemIndex === -1) {
       const newCartItem = addNewProductToCart(product);
@@ -191,20 +191,20 @@ function renderCartItem(cartItem: CartItem) {
 
   let quantitySpan = document.createElement("span");
   quantitySpan.setAttribute("class", "quantity-text center");
-  quantitySpan.innerText = cartItem.quantity;
+  quantitySpan.innerText = String(cartItem.quantity);
 
   cartLi.append(cartItemImg, itemName, minusBtn, quantitySpan, plusBtn);
 }
 
-function checkExistCart(product) {
+function checkExistCart(id: string) {
   const itemIndex = state.cartItems.findIndex(function (cartItem) {
-    return cartItem.id === product.id;
+    return cartItem.id === id;
   });
 
   return itemIndex;
 }
 
-function addNewProductToCart(product) {
+function addNewProductToCart(product: Product) {
   let cartItem = {
     id: product.id,
     quantity: 1,
@@ -221,7 +221,7 @@ function addNewProductToCart(product) {
   return cartItem;
 }
 
-function updateCartItem(updatedItem) {
+function updateCartItem(updatedItem: CartItem) {
   let itemIndex = state.cartItems.findIndex(function (object) {
     return object.id === updatedItem.id;
   });
@@ -232,36 +232,38 @@ function updateCartItem(updatedItem) {
       .then(function (serverItem) {
         state.cartItems[itemIndex] = serverItem;
 
-        let itemQuantity = itemLi.querySelector(".quantity-text");
-        itemQuantity.innerText = serverItem.quantity;
+        let itemQuantity =
+          itemLi?.querySelector<HTMLSpanElement>(".quantity-text");
+        if (itemQuantity) itemQuantity.innerText = serverItem.quantity;
       })
       .then(function () {
         updateTotal();
       });
   }
   if (updatedItem.quantity === 0) {
-    delItemFromServer(updatedItem).then(function () {
+    delItemFromServer(updatedItem.id).then(function () {
       state.cartItems.splice(itemIndex, 1);
-      itemLi.remove();
+      itemLi?.remove();
       updateTotal();
     });
   }
 }
 
 function updateTotal() {
-  let totalEl = document.querySelector(".total-number");
+  let totalEl = document.querySelector<HTMLSpanElement>(".total-number");
 
   let totalPrice = 0;
 
-  for (item of state.cartItems) {
+  for (const item of state.cartItems) {
     let productDetail = state.products.find(function (product) {
       return product.id === item.id;
     });
 
-    totalPrice = totalPrice + productDetail.price * item.quantity;
+    if (productDetail)
+      totalPrice = totalPrice + productDetail.price * item.quantity;
   }
 
-  totalEl.innerText = `£${totalPrice.toFixed(2)}`;
+  if (totalEl) totalEl.innerText = `£${totalPrice.toFixed(2)}`;
 }
 
 function getServerCart() {
@@ -275,7 +277,7 @@ function getServerCart() {
     });
 }
 
-function postItemToServer(item) {
+function postItemToServer(item: CartItem) {
   return fetch(`http://localhost:4000/cartItems/`, {
     method: "POST",
     headers: {
@@ -290,7 +292,7 @@ function postItemToServer(item) {
     });
 }
 
-function patchCartItemToServer(item) {
+function patchCartItemToServer(item: any) {
   return fetch(`http://localhost:4000/cartItems/${item.id}`, {
     method: "PATCH",
     headers: {
@@ -305,8 +307,8 @@ function patchCartItemToServer(item) {
     });
 }
 
-function delItemFromServer(item) {
-  return fetch(`http://localhost:4000/cartItems/${item.id}`, {
+function delItemFromServer(id: string) {
+  return fetch(`http://localhost:4000/cartItems/${id}`, {
     method: "DELETE",
   }).catch((error) => {
     console.log(error);
@@ -339,7 +341,7 @@ function displayFilterSortSection() {
   });
 
   filterDiv.append(filterPara, vegBtn, fruitBtn);
-  h1El.after(filterDiv);
+  h1El?.after(filterDiv);
 
   let sortPara = document.createElement("p");
   sortPara.innerText = "Sort by: ";
@@ -354,13 +356,13 @@ function displayFilterSortSection() {
     sortProductByPrice();
 
     let storeUl = document.querySelector(".store--item-list");
-    let allProductLi = storeUl.querySelectorAll("li");
-    allProductLi.forEach(removeLi);
+    let allProductLi = storeUl?.querySelectorAll("li");
+    if (allProductLi) allProductLi.forEach(removeLi);
 
-    for (product of state.products) {
+    for (const product of state.products) {
       let productLi = renderProduct(product);
       let itemUl = document.querySelector(".store--item-list");
-      itemUl.append(productLi);
+      itemUl?.append(productLi);
     }
   });
 
@@ -371,17 +373,17 @@ function displayFilterSortSection() {
     sortProductByPrice();
 
     let storeUl = document.querySelector(".store--item-list");
-    let allProductLi = storeUl.querySelectorAll("li");
-    allProductLi.forEach(removeLi);
+    let allProductLi = storeUl?.querySelectorAll("li");
+    if (allProductLi) allProductLi.forEach(removeLi);
 
-    for (product of state.products) {
+    for (const product of state.products) {
       let productLi = renderProduct(product);
       let itemUl = document.querySelector(".store--item-list");
-      itemUl.prepend(productLi);
+      itemUl?.prepend(productLi);
     }
   });
   sortDiv.append(sortPara, lowPriceBtn, highPriceBtn);
-  h1El.after(sortDiv);
+  h1El?.after(sortDiv);
 }
 
 function sortProductByPrice() {
@@ -392,21 +394,21 @@ function sortProductByPrice() {
   console.log(state.products);
 }
 
-function filterProduct(type) {
+function filterProduct(type: string) {
   let storeUl = document.querySelector(".store--item-list");
-  let allProductLi = storeUl.querySelectorAll("li");
-  allProductLi.forEach(removeLi);
+  let allProductLi = storeUl?.querySelectorAll("li");
+  if (allProductLi) allProductLi.forEach(removeLi);
 
-  for (product of state.products) {
+  for (const product of state.products) {
     if (type === product.type) {
       let productLi = renderProduct(product);
       let itemUl = document.querySelector(".store--item-list");
-      itemUl.append(productLi);
+      itemUl?.append(productLi);
     }
   }
 }
 
-function removeLi(liEl) {
+function removeLi(liEl: any) {
   liEl.remove();
 }
 
